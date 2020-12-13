@@ -83,6 +83,7 @@ void Cls_OnRButtonDown(HWND hWnd, BOOL fDoubleClick, int x, int y, UINT keyFlags
             Regions.back()->Brush(Window.StaticBox.ColorBrush);
             Regions.back()->Fill(Window.StaticBox);
             points.clear();
+            InvalidateRect(hWnd, 0, 0);
             break;
     }
 }
@@ -118,7 +119,7 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
                         case 2:
                             Mode = 3;
                             points.clear();
-                            InvalidateRect(hWnd, 0, 0);
+
                             break;
                     }
                 }
