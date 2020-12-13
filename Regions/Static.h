@@ -14,12 +14,16 @@ public:
     INT ColorBrush = 0x00FF00;
 
     Static() {}
-    Static(HWND hWnd) : hWnd (hWnd) {
+    Static(HWND hWnd) : hWnd(hWnd) {
         GetClientRect(hWnd, &RT);
         hDC = GetDC(hWnd);
+        FillRect(hDC, &RT, GetSysColorBrush(WHITE_BRUSH));
     }
     ~Static() {}
 
+    void Paint() {
+        FillRect(hDC, &RT, GetSysColorBrush(WHITE_BRUSH));
+    }
     operator HWND() {
         return hWnd;
     }

@@ -18,7 +18,7 @@ public:
     Main(HWND hWnd) {
         HWND child = 0;
         int style = WS_CHILD | WS_VISIBLE;
-        StaticBox = Static(CreateWindowEx(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE, "static", "", style | WS_BORDER, 10, 10, 580, 580, hWnd, (HMENU)IDC_PSTATIC, GetModuleHandle(0), 0));
+        StaticBox = Static(CreateWindowEx(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE, "static", "", style | WS_BORDER | BS_OWNERDRAW, 10, 10, 580, 580, hWnd, (HMENU)IDC_PSTATIC, GetModuleHandle(0), 0));
         CreateWindowEx(0, "button", "Настройка карандаша", style | BS_GROUPBOX, 600, 10, 370, 90, hWnd, (HMENU)0, GetModuleHandle(0), 0);
         CreateWindowEx(0, "static", "Толщина линии", style | WS_BORDER | ACS_CENTER, 610, 40, 150, 20, hWnd, (HMENU)0, GetModuleHandle(0), 0);
 
@@ -61,7 +61,7 @@ public:
 
     static void Open(WNDPROC wndproc) {
         WNDCLASS wc{};
-        wc.style = 0;
+        wc.style = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc = wndproc;
         wc.cbClsExtra = 0;
         wc.cbWndExtra = 0;
