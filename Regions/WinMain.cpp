@@ -14,8 +14,9 @@
 Main Window;
 INT Mode;
 
-POINT LastMousePos;
-std::shared_ptr<int> s;
+POINT MousePosLClick = {};
+POINT LastMousePos = {};
+
 std::vector<std::shared_ptr<Region>> Regions;
 std::vector<std::shared_ptr<Region>> SelectedRegions;
 std::vector<POINT> points;
@@ -38,6 +39,7 @@ void Cls_OnLButtonDown(HWND hWnd, BOOL fDoubleClick, int x, int y, UINT keyFlags
             if(PtInRect(&Window.StaticBox.RT, {x - 10, y - 10})) {
                 LastMousePos = {x - 10, y - 10};
                 if(auto region = Region::Search(Regions, LastMousePos)) {
+                    MousePosLClick = LastMousePos;
                     SelectedRegions.push_back(region);
                     Regions.erase(std::find(Regions.begin(), Regions.end(), region));
                     region->Select(Window.StaticBox);
@@ -66,25 +68,49 @@ void Cls_OnLButtonDown(HWND hWnd, BOOL fDoubleClick, int x, int y, UINT keyFlags
                 LineTo(Window.StaticBox, points[it].x, points[it].y);
             break;
     }
+    Window.StaticBox.Paint();
+}
+
+void Cls_OnLButtonUp(HWND hwnd, int x, int y, UINT keyFlags) {
+    MousePosLClick = {};
 }
 
 void Cls_OnRButtonDown(HWND hWnd, BOOL fDoubleClick, int x, int y, UINT keyFlags) {
     switch(Mode) {
         case 1:
-            Regions.push_back(Region::Combine(SelectedRegions));
+            Regions.push_back(std::shared_ptr<Region>(new FMulti(SelectedRegions)));
             Regions.back()->Pen(Window.StaticBox.Width, Window.StaticBox.ColorPen);
             Regions.back()->Brush(Window.StaticBox.ColorBrush);
             Regions.back()->Fill(Window.StaticBox);
             SendMessage(hWnd, WM_KEYDOWN, VK_DELETE, 0);
             break;
         case 3:
-            Regions.push_back(std::shared_ptr<Region>(new Region(points)));
+            Regions.push_back(std::shared_ptr<Region>(new FPolygon(points)));
             Regions.back()->Pen(Window.StaticBox.Width, Window.StaticBox.ColorPen);
             Regions.back()->Brush(Window.StaticBox.ColorBrush);
             Regions.back()->Fill(Window.StaticBox);
-            points.clear();
-            InvalidateRect(hWnd, 0, 0);
+            points.clear(), Mode = 0;
             break;
+    }
+    Window.StaticBox.Paint();
+}
+
+void Cls_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags) {
+    x -= 10, y -= 10;
+    if(MousePosLClick.x && MousePosLClick.y) {
+        auto dx = x - MousePosLClick.x;
+        auto dy = y - MousePosLClick.y;
+
+        for(auto & region : SelectedRegions) {
+            region->Clear(Window.StaticBox);
+            region->Offset(dx, dy);
+            region->Select(Window.StaticBox);
+        }
+        for(auto & region : Regions)
+            region->Fill(Window.StaticBox);
+
+        Window.StaticBox.Paint();
+        MousePosLClick = {x, y};
     }
 }
 
@@ -103,15 +129,15 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
                 if(IsDlgButtonChecked(hWnd, IDC_RADIO + it)) {
                     switch(it) {
                         case 0:
-                            Regions.push_back(std::shared_ptr<Region>(new Region(CreateRectRgn(
-                                LastMousePos.x, LastMousePos.y, LastMousePos.x + 70, LastMousePos.y + 60))));
+                            Regions.push_back(std::shared_ptr<Region>(new FRectangle({
+                                LastMousePos.x, LastMousePos.y, LastMousePos.x + 70, LastMousePos.y + 60})));
                             Regions.back()->Pen(Window.StaticBox.Width, Window.StaticBox.ColorPen);
                             Regions.back()->Brush(Window.StaticBox.ColorBrush);
                             Regions.back()->Fill(Window.StaticBox);
                             break;
                         case 1:
-                            Regions.push_back(std::shared_ptr<Region>(new Region(CreateEllipticRgn(
-                                LastMousePos.x, LastMousePos.y, LastMousePos.x + 180, LastMousePos.y + 60))));
+                            Regions.push_back(std::shared_ptr<Region>(new FEllipse({
+                                LastMousePos.x, LastMousePos.y, LastMousePos.x + 180, LastMousePos.y + 60})));
                             Regions.back()->Pen(Window.StaticBox.Width, Window.StaticBox.ColorPen);
                             Regions.back()->Brush(Window.StaticBox.ColorBrush);
                             Regions.back()->Fill(Window.StaticBox);
@@ -119,7 +145,6 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
                         case 2:
                             Mode = 3;
                             points.clear();
-
                             break;
                     }
                 }
@@ -134,6 +159,7 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
             Mode = 2;
             break;
     }
+    Window.StaticBox.Paint();
 }
 
 void Cls_OnDrawItem(HWND hWnd, const DRAWITEMSTRUCT * lpDrawItem) {
@@ -142,22 +168,6 @@ void Cls_OnDrawItem(HWND hWnd, const DRAWITEMSTRUCT * lpDrawItem) {
             Window.ColorPen.Paint(Window.StaticBox.ColorPen);
         if(lpDrawItem->hwndItem == Window.ColorBrush)
             Window.ColorBrush.Paint(Window.StaticBox.ColorBrush);
-    } else {
-
-        Window.StaticBox.Paint();
-
-        for(auto & region : Regions)
-            region->Fill(Window.StaticBox);
-        for(auto & region : SelectedRegions)
-            region->Select(Window.StaticBox);
-
-        if(points.size()) {
-            SelectObject(Window.StaticBox, GetStockObject(BLACK_PEN));
-            MoveToEx(Window.StaticBox, points.front().x, points.front().y, 0);
-            for(auto it = 1; it < points.size(); ++it)
-                LineTo(Window.StaticBox, points[it].x, points[it].y);
-        }
-
     }
 }
 
@@ -166,7 +176,7 @@ void Cls_OnPaint(HWND hWnd) {
     RECT        RT;
     auto hDC = BeginPaint(hWnd, &PS);
 
-    Cls_OnDrawItem(hWnd, 0);
+    Window.StaticBox.Paint();
 
     EndPaint(hWnd, &PS);
 }
@@ -177,41 +187,37 @@ void Cls_OnKey(HWND hWnd, UINT vk, BOOL fDown, int cRepeat, UINT flags) {
             for(auto & region : SelectedRegions) {
                 region->Clear(Window.StaticBox);
                 region->Offset(0, -10);
-                for(auto & region : Regions)
-                    region->Fill(Window.StaticBox);
-                for(auto & region : SelectedRegions)
-                    region->Select(Window.StaticBox);
+                region->Select(Window.StaticBox);
             }
+            for(auto & region : Regions)
+                region->Fill(Window.StaticBox);
             break;
         case VK_DOWN:
             for(auto & region : SelectedRegions) {
                 region->Clear(Window.StaticBox);
                 region->Offset(0, 10);
-                for(auto & region : Regions)
-                    region->Fill(Window.StaticBox);
-                for(auto & region : SelectedRegions)
-                    region->Select(Window.StaticBox);
+                region->Select(Window.StaticBox);
             }
+            for(auto & region : Regions)
+                region->Fill(Window.StaticBox);
             break;
         case VK_LEFT:
             for(auto & region : SelectedRegions) {
                 region->Clear(Window.StaticBox);
                 region->Offset(-10, 0);
-                for(auto & region : Regions)
-                    region->Fill(Window.StaticBox);
-                for(auto & region : SelectedRegions)
-                    region->Select(Window.StaticBox);
+                region->Select(Window.StaticBox);
             }
+            for(auto & region : Regions)
+                region->Fill(Window.StaticBox);
             break;
         case VK_RIGHT:
             for(auto & region : SelectedRegions) {
                 region->Clear(Window.StaticBox);
                 region->Offset(10, 0);
-                for(auto & region : Regions)
-                    region->Fill(Window.StaticBox);
-                for(auto & region : SelectedRegions)
-                    region->Select(Window.StaticBox);
+                region->Select(Window.StaticBox);
             }
+            for(auto & region : Regions)
+                region->Fill(Window.StaticBox);
             break;
         case VK_DELETE:
             for(auto & region : SelectedRegions)
@@ -253,6 +259,7 @@ void Cls_OnKey(HWND hWnd, UINT vk, BOOL fDown, int cRepeat, UINT flags) {
             }
             break;
     }
+    Window.StaticBox.Paint();
 }
 
 void Cls_OnScroll(HWND hWnd, HWND hWndCtl, UINT code, int pos) {
@@ -271,7 +278,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
         HANDLE_MSG(hWnd, WM_CREATE, Cls_OnCreate);
         HANDLE_MSG(hWnd, WM_DESTROY, Cls_OnDestroy);
         HANDLE_MSG(hWnd, WM_LBUTTONDOWN, Cls_OnLButtonDown);
+        HANDLE_MSG(hWnd, WM_LBUTTONUP, Cls_OnLButtonUp);
         HANDLE_MSG(hWnd, WM_RBUTTONDOWN, Cls_OnRButtonDown);
+        HANDLE_MSG(hWnd, WM_MOUSEMOVE, Cls_OnMouseMove);
         HANDLE_MSG(hWnd, WM_COMMAND, Cls_OnCommand);
         HANDLE_MSG(hWnd, WM_PAINT, Cls_OnPaint);
         HANDLE_MSG(hWnd, WM_DRAWITEM, Cls_OnDrawItem);

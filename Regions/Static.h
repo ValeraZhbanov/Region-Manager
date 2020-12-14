@@ -2,10 +2,13 @@
 #include <Windows.h>
 
 
+HBRUSH BrushSelect = CreateSolidBrush(0xAAAAAA);
+HPEN PenSelect = CreatePen(0, 11, 0xAAAAAA);
 
 class Static {
     HWND hWnd = {};
     HDC hDC = {};
+    HDC hDCM = {};
 
 public:
     RECT RT = {};
@@ -17,19 +20,23 @@ public:
     Static(HWND hWnd) : hWnd(hWnd) {
         GetClientRect(hWnd, &RT);
         hDC = GetDC(hWnd);
-        FillRect(hDC, &RT, GetSysColorBrush(WHITE_BRUSH));
+        hDCM = CreateCompatibleDC(hDC);
+        SelectObject(hDCM, CreateCompatibleBitmap(hDC, RT.right, RT.bottom));
+
+        FillRect(hDCM, &RT, BrushSelect);
+
     }
     ~Static() {}
 
     void Paint() {
-        FillRect(hDC, &RT, GetSysColorBrush(WHITE_BRUSH));
+        BitBlt(hDC, RT.left, RT.top, RT.right, RT.bottom, hDCM, 0, 0, SRCCOPY);
     }
     operator HWND() {
         return hWnd;
     }
 
     operator HDC() {
-        return hDC;
+        return hDCM;
     }
 };
 
