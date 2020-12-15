@@ -2,35 +2,48 @@
 #include <Windows.h>
 
 
-HBRUSH BrushSelect = CreateSolidBrush(0xAAAAAA);
-HPEN PenSelect = CreatePen(0, 11, 0xAAAAAA);
+
+struct Pen {
+    DWORD Style = 0;;
+    DWORD Width = 1;
+    DWORD Color = 0x00000000;
+};
+struct Brush {
+    DWORD Color = 0x0000FF00;
+    DWORD Style = 0;
+};
+
 
 class Static {
     HWND hWnd = {};
     HDC hDC = {};
     HDC hDCM = {};
 
+    HBRUSH BrushSelect = CreateSolidBrush(0xAAAAAA);
+    HPEN PenSelect = CreatePen(0, 11, 0xAAAAAA);
+
 public:
     RECT RT = {};
-    INT Width = 1;
-    INT ColorPen = 0x000000;
-    INT ColorBrush = 0x00FF00;
+    Pen Pen;
+    Brush Brush;
 
     Static() {}
     Static(HWND hWnd) : hWnd(hWnd) {
         GetClientRect(hWnd, &RT);
         hDC = GetDC(hWnd);
+        SetBkMode(hDC, TRANSPARENT);
         hDCM = CreateCompatibleDC(hDC);
+        SetBkMode(hDCM, TRANSPARENT);
         SelectObject(hDCM, CreateCompatibleBitmap(hDC, RT.right, RT.bottom));
-
         FillRect(hDCM, &RT, BrushSelect);
-
     }
+
     ~Static() {}
 
     void Paint() {
         BitBlt(hDC, RT.left, RT.top, RT.right, RT.bottom, hDCM, 0, 0, SRCCOPY);
     }
+
     operator HWND() {
         return hWnd;
     }

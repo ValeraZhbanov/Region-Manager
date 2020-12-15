@@ -144,7 +144,7 @@
   <ItemGroup>
     <ClInclude Include="Gui.h" />
     <ClInclude Include="Region.h" />
-    <ClInclude Include="resource.h" />
+    <ClInclude Include="Regions.h" />
     <ClInclude Include="Static.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

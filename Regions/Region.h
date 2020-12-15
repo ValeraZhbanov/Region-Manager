@@ -9,25 +9,36 @@
 class Region {
 
 protected:
-    HBRUSH brush;
-    HPEN pen;
+    Pen _pen;
+    Brush _brush;
+
+    HBRUSH BrushSelect = CreateSolidBrush(0xAAAAAA);
+    HPEN PenSelect = CreatePen(0, 11, 0xAAAAAA);
+
+    HBRUSH Brush;
+    HPEN Pen;
 
 public:
-    Region() {
-        Pen(1, 0x00FF00);
-        Brush(0x00FF00);
+
+    virtual void SetPen(const ::Pen & pen) {
+        _pen = pen;
+        DeletePen(Pen);
+        DeletePen(PenSelect);
+        Pen = CreatePen(pen.Style, pen.Width, pen.Color);
+        PenSelect = CreatePen(0, pen.Width + 1, 0xAAAAAA);
     }
 
-    void Pen(INT width, INT color) {
-        DeleteBrush(pen);
-        pen = CreatePen(0, width, color);
+    virtual void SetBrush(const ::Brush & brush) {
+        _brush = brush;
+        DeleteBrush(Brush);
+        if(brush.Style == 0) {
+            Brush = CreateSolidBrush(brush.Color);
+        } else {
+            Brush = CreateHatchBrush(brush.Style - 1, brush.Color);
+        }
     }
 
-    void Brush(INT color) {
-        DeleteBrush(brush);
-        brush = CreateSolidBrush(color);
-    }
-
+    virtual Region * Copy() = 0;
     virtual void Offset(INT x, INT y) = 0;
     virtual void Resize(DOUBLE x, DOUBLE y) = 0;
     virtual void Clear(HDC hDC) = 0;
@@ -35,9 +46,9 @@ public:
     virtual void Select(HDC hDC) = 0;
     virtual bool InRegion(POINT point) = 0;
 
-    static std::shared_ptr<Region> Search(std::vector<std::shared_ptr<Region>> & regions, POINT point) {
+    static std::shared_ptr<Region> Search(std::vector<std::shared_ptr<Region>> & Regions, POINT point) {
         std::shared_ptr<Region> result = 0;
-        for(auto & region : regions)
+        for(auto & region : Regions)
             if(region->InRegion(point))
                 result = region;
         return result;
@@ -50,6 +61,13 @@ protected:
     RECT RT;
 public:
     FRectangle(const RECT & RT) : RT(RT) {}
+
+    virtual Region * Copy() {
+        FRectangle * result = new FRectangle(RT);
+        result->SetPen(_pen);
+        result->SetBrush(_brush);
+        return result;
+    }
 
     virtual void Offset(INT x, INT y) {
         OffsetRect(&RT, x, y);
@@ -70,13 +88,13 @@ public:
     }
 
     virtual void Fill(HDC hDC) {
-        SelectObject(hDC, pen);
-        SelectObject(hDC, brush);
+        SelectObject(hDC, Pen);
+        SelectObject(hDC, Brush);
         Rectangle(hDC, RT.left, RT.top, RT.right, RT.bottom);
     }
 
     virtual void Select(HDC hDC) {
-        SelectObject(hDC, pen);
+        SelectObject(hDC, Pen);
         SelectObject(hDC, GetSysColorBrush(DKGRAY_BRUSH));
         Rectangle(hDC, RT.left, RT.top, RT.right, RT.bottom);
     }
@@ -92,6 +110,13 @@ class FEllipse : public FRectangle {
 public:
     FEllipse(const RECT & RT) : FRectangle(RT) {}
 
+    virtual Region * Copy() {
+        FEllipse * result = new FEllipse(RT);
+        result->SetPen(_pen);
+        result->SetBrush(_brush);
+        return result;
+    }
+
     virtual void Clear(HDC hDC) {
         SelectObject(hDC, PenSelect);
         SelectObject(hDC, BrushSelect);
@@ -99,13 +124,13 @@ public:
     }
 
     virtual void Fill(HDC hDC) {
-        SelectObject(hDC, pen);
-        SelectObject(hDC, brush);
+        SelectObject(hDC, Pen);
+        SelectObject(hDC, Brush);
         Ellipse(hDC, RT.left, RT.top, RT.right, RT.bottom);
     }
 
     virtual void Select(HDC hDC) {
-        SelectObject(hDC, pen);
+        SelectObject(hDC, Pen);
         SelectObject(hDC, GetSysColorBrush(DKGRAY_BRUSH));
         Ellipse(hDC, RT.left, RT.top, RT.right, RT.bottom);
     }
@@ -118,12 +143,20 @@ class FPolygon : public Region {
 public:
     FPolygon(const std::vector<POINT> & points = {}) : points(points) {}
 
+    virtual Region * Copy() {
+        FPolygon * result = new FPolygon(points);
+        result->SetPen(_pen);
+        result->SetBrush(_brush);
+        return result;
+    }
+
     virtual void Offset(INT x, INT y) {
         for(auto & point : points) {
             point.x += x;
             point.y += y;
         }
     }
+
     virtual void Resize(DOUBLE x, DOUBLE y) {
         auto point = points.front();
         for(auto & point : points) {
@@ -140,13 +173,13 @@ public:
     }
 
     virtual void Fill(HDC hDC) {
-        SelectObject(hDC, pen);
-        SelectObject(hDC, brush);
+        SelectObject(hDC, Pen);
+        SelectObject(hDC, Brush);
         Polygon(hDC, points.data(), points.size());
     }
 
     virtual void Select(HDC hDC) {
-        SelectObject(hDC, pen);
+        SelectObject(hDC, Pen);
         SelectObject(hDC, GetSysColorBrush(DKGRAY_BRUSH));
         Polygon(hDC, points.data(), points.size());
     }
@@ -168,7 +201,25 @@ class FMulti : public Region {
     std::vector<std::shared_ptr<Region>> Regions;
 
 public:
-    FMulti(std::vector<std::shared_ptr<Region>> & regions) : Region(), Regions(regions) {}
+    FMulti(std::vector<std::shared_ptr<Region>> & Regions) : Region(), Regions(Regions) {}
+
+    virtual void SetPen(const ::Pen & pen) {
+        for(auto & region : Regions)
+            region->SetPen(pen);
+    }
+
+    virtual void SetBrush(const ::Brush & brush) {
+        for(auto & region : Regions)
+            region->SetBrush(brush);
+    }
+
+    virtual Region * Copy() {
+        auto regions = Regions;
+        for(auto it = 0; it < Regions.size(); ++it) {
+            regions[it] = std::shared_ptr<Region>(Regions[it]->Copy());
+        }
+        return new FMulti(regions);
+    }
 
     virtual void Offset(INT x, INT y) {
         for(auto & region : Regions)

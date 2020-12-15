@@ -18,13 +18,13 @@
     <ClInclude Include="Region.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="Static.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Gui.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Regions.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
