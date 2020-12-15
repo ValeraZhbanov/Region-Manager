@@ -43,6 +43,8 @@ public:
 
     Main() {}
     Main(HWND hWnd) {
+
+        Center(hWnd);
         HWND child = 0;
         int style = WS_CHILD | WS_VISIBLE;
         StaticBox = Static(CreateWindowEx(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE, "static", "", style | WS_BORDER | BS_OWNERDRAW, 10, 10, 580, 580, hWnd, (HMENU)0, GetModuleHandle(0), 0));
@@ -58,12 +60,11 @@ public:
         CreateWindowEx(0, "static", "Тип линии", style | WS_BORDER | ACS_CENTER, 610, 100, 150, 20, hWnd, (HMENU)0, GetModuleHandle(0), 0);
         ComboBoxPen = CreateWindow(WC_COMBOBOX, "", style | WS_BORDER | CBS_DROPDOWNLIST, 770, 100, 190, 170, hWnd, (HMENU)IDC_COMBOBOXPEN, GetModuleHandle(0), 0);
         SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)"Простой");
-        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)"-------");
-        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)".......");
-        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)"_._._._");
-        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)"_.._.._");
+        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)"- - - - - - -");
+        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)". . . . . . .");
+        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)"- . - . - . -");
+        SendMessage(ComboBoxPen, CB_ADDSTRING, 0, (LPARAM)"- . . - . . -");
         SendMessage(ComboBoxPen, CB_SETCURSEL, 0, 0);
-
 
         CreateWindowEx(0, "button", "Настройка кисти", style | BS_GROUPBOX, 600, 150, 370, 90, hWnd, (HMENU)0, GetModuleHandle(0), 0);
         CreateWindowEx(0, "static", "Цвет кисти", style | WS_BORDER | ACS_CENTER, 610, 180, 150, 20, hWnd, (HMENU)0, GetModuleHandle(0), 0);
@@ -72,12 +73,12 @@ public:
         CreateWindowEx(0, "static", "Стиль кисти", style | WS_BORDER | ACS_CENTER, 610, 210, 150, 20, hWnd, (HMENU)0, GetModuleHandle(0), 0);
         ComboBoxBrush = CreateWindow(WC_COMBOBOX, "", style | WS_BORDER | CBS_DROPDOWNLIST, 770, 210, 190, 200, hWnd, (HMENU)IDC_COMBOBOXBRUSH, GetModuleHandle(0), 0);
         SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"Простой");
-        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"-----");
-        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"|||||");
-        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"\\\\\\\\\\");
-        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"/////");
-        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"+++++");
-        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"xxxxx");
+        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"----------");
+        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"| | | | |");
+        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"\\ \\ \\ \\ \\");
+        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"/ / / / /");
+        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"+ + + + +");
+        SendMessage(ComboBoxBrush, CB_ADDSTRING, 0, (LPARAM)"X X X X X");
         SendMessage(ComboBoxBrush, CB_SETCURSEL, 0, 0);
 
 
@@ -132,6 +133,8 @@ public:
         UpdateWindow(hWnd);
     }
 
+
+
 private:
     HWND CreateToolTip(HWND hWndTool, LPCSTR pszText) {
         HWND tooltip = CreateWindowEx(0, TOOLTIPS_CLASS, 0, WS_POPUP | TTS_ALWAYSTIP | TTS_BALLOON | TTS_CLOSE | TTS_USEVISUALSTYLE, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWnd, 0, GetModuleHandle(0), 0);
@@ -148,7 +151,7 @@ private:
         return tooltip;
     }
 
-   static HMENU CreateMainMenu() {
+    static HMENU CreateMainMenu() {
         auto hMainMenu = CreateMenu();
         {
             auto hMenu = CreatePopupMenu();
@@ -162,11 +165,21 @@ private:
         return hMainMenu;
     }
 
-   HMENU CreateContextMenu() {
+    HMENU CreateContextMenu() {
         auto hMainMenu = CreatePopupMenu();
         AppendMenu(hMainMenu, MF_STRING, IDC_COMBINE, "Объединить");
         AppendMenu(hMainMenu, MF_STRING, IDC_COPY, "Клонировать");
         AppendMenu(hMainMenu, MF_STRING, IDC_DELETE, "Удалить");
         return hMainMenu;
+    }
+
+    void Center(HWND hWnd) {
+        RECT RT;
+        GetWindowRect(hWnd, &RT);
+        auto width = RT.right - RT.left;
+        auto height = RT.bottom - RT.top;
+        auto x = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
+        auto y = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
+        MoveWindow(hWnd, x, y, width, height, true);
     }
 };

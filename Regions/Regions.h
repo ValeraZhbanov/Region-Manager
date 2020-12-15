@@ -110,16 +110,20 @@ public:
     void SelectAll() {
         SelectedRegions.insert(SelectedRegions.end(), Regions.begin(), Regions.end());
         Regions.clear();
-        for(auto & region : SelectedRegions)
+        for(auto & region : SelectedRegions) {
+            region->Clear(window->StaticBox);
             region->Select(window->StaticBox);
+        }
         Paint();
     }
 
     void UnselectAll() {
         Regions.insert(Regions.end(), SelectedRegions.begin(), SelectedRegions.end());
         SelectedRegions.clear();
-        for(auto & region : Regions)
+        for(auto & region : Regions) {
+            region->Clear(window->StaticBox);
             if(DrawAll) region->Fill(window->StaticBox);
+        }
         Paint();
     }
 
@@ -146,7 +150,7 @@ public:
         for(auto it = 0; it < SelectedRegions.size(); ++it) {
             auto region = std::shared_ptr<Region>(SelectedRegions[it]->Copy());
             Regions.push_back(region);
-            region->Offset(10, 10);
+            region->Offset(30, 30);
             if(DrawAll) region->Fill(window->StaticBox);
         }
         Paint();

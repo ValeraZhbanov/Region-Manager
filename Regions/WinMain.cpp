@@ -100,8 +100,10 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
                 }
             return;
         case IDC_COMBINE:
-            Regions.Add(new FMulti(Regions.SelectedRegions), false);
-            SendMessage(hWnd, WM_KEYDOWN, VK_DELETE, 0);
+            if(MessageBox(hWnd, "Объединить выделенные фигуры?", "Предупреждение", MB_ICONINFORMATION | MB_OKCANCEL) == IDOK) {
+                Regions.Add(new FMulti(Regions.SelectedRegions), false);
+                Regions.Delete();
+            }
             return;
         case IDC_UPDATE:
             Regions.SetPen(Window.StaticBox.Pen);
@@ -134,10 +136,12 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
             Regions.UnselectAll();
             return;
         case IDC_CLEARHDC:
-            Regions.Clear();
+            if(MessageBox(hWnd, "Отчистить лист?", "Предупреждение", MB_ICONINFORMATION | MB_OKCANCEL) == IDOK)
+                Regions.Clear();
             return;
         case IDC_DELETE:
-            Regions.Delete();
+            if(MessageBox(hWnd, "Удалить выделенные фигуры?", "Предупреждение", MB_ICONINFORMATION | MB_OKCANCEL) == IDOK)
+                Regions.Delete();
             return;
     }
 }
@@ -176,7 +180,8 @@ void Cls_OnKey(HWND hWnd, UINT vk, BOOL fDown, int cRepeat, UINT flags) {
             Regions.Offset(10, 0);
             return;
         case VK_DELETE:
-            Regions.Delete();
+            if(MessageBox(hWnd, "Удалить выделенные фигуры?", "Предупреждение", MB_ICONINFORMATION | MB_OKCANCEL) == IDOK)
+                Regions.Delete();
             return;
         case 187:
             if(GetKeyState(VK_CONTROL) & 0x8000) {
