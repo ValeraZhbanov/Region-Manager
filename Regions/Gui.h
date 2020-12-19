@@ -17,18 +17,20 @@
 #define IDC_RADIOF                      1011
 #define IDC_RADIOSELF                   1021
 
-#define IDC_SELECTALL                  1101
-#define IDC_UNSELECTALL                1102
-#define IDC_CLEARHDC                   1103
+#define IDC_SELECTALL                   1101
+#define IDC_UNSELECTALL                 1102
+#define IDC_CLEARHDC                    1103
+#define IDC_ABOUT                       1104
 
-#define IDC_DELETE                     1203
+#define IDC_DELETE                      1203
 
+#define IDD_HELP                        101
+#define IDC_TEXT                        1001
 
 class Main {
-    HWND hWnd = {};
-
 
 public:
+    HWND hWnd = {};
 
     Static StaticBox = {};
 
@@ -42,7 +44,7 @@ public:
     HMENU ContextMenu = CreateContextMenu();
 
     Main() {}
-    Main(HWND hWnd) {
+    Main(HWND hWnd) : hWnd(hWnd){
 
         Center(hWnd);
         HWND child = 0;
@@ -128,7 +130,7 @@ public:
         wc.lpszClassName = "Window";
         RegisterClass(&wc);
 
-        auto hWnd = CreateWindow("Window", "Regions Manager", WS_OVERLAPPED | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, 1000, 660, 0, CreateMainMenu(), GetModuleHandle(0), 0);
+        auto hWnd = CreateWindow("Window", "Regions Manager", WS_MINIMIZEBOX | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, 1000, 660, 0, CreateMainMenu(), GetModuleHandle(0), 0);
         ShowWindow(hWnd, 10);
         UpdateWindow(hWnd);
     }
@@ -161,7 +163,14 @@ private:
                 AppendMenu(hMenu, MF_STRING, IDC_UNSELECTALL, "Снять выделения");
             }
         }
-        AppendMenu(hMainMenu, MF_STRING, IDC_CLEARHDC, "Отчистить лист");
+        AppendMenu(hMainMenu, MF_STRING, IDC_CLEARHDC, "Очистить лист");
+        {
+            auto hMenu = CreatePopupMenu();
+            AppendMenu(hMainMenu, MF_STRING | MF_POPUP, (INT)hMenu, "Помощь");
+            {
+                AppendMenu(hMenu, MF_STRING, IDC_ABOUT, "О программе");
+            }
+        }
         return hMainMenu;
     }
 

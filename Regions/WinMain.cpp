@@ -2,6 +2,11 @@
 #include <windowsx.h>
 #include <Commctrl.h>
 
+#include <fstream>
+#include <locale>
+#include <codecvt>
+#include <string>
+
 #include "Regions.h"
 
 MRegions Regions;
@@ -73,6 +78,31 @@ void Cls_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags) {
     }
 }
 
+BOOL WINAPI AboutProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
+    switch(uMessage) {
+        case WM_INITDIALOG:
+            {
+                std::wifstream fin("about.txt", std::wifstream::binary);
+                fin.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>()));
+                std::wstring text;
+                std::getline(fin, text, L'\0');
+                EnableWindow(Window.hWnd, 0);
+                SetWindowTextW(GetDlgItem(hWnd, IDC_TEXT), text.c_str());
+            }
+            return 1;
+        case WM_CLOSE:
+            EnableWindow(Window.hWnd, 1);
+            DestroyWindow(hWnd);
+            return 0;
+        case WM_COMMAND:
+            if(wParam == IDCANCEL)
+                SendMessage(hWnd, WM_CLOSE, 0, 0);
+        default:
+            return 0;
+    }
+
+}
+
 void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
     switch(id) {
         case IDC_COLORPEN:
@@ -142,6 +172,9 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
         case IDC_DELETE:
             if(MessageBox(hWnd, "Удалить выделенные фигуры?", "Предупреждение", MB_ICONINFORMATION | MB_OKCANCEL) == IDOK)
                 Regions.Delete();
+            return;
+        case IDC_ABOUT:
+            CreateDialog(GetModuleHandle(0), MAKEINTRESOURCE(IDD_HELP), hWnd, AboutProc);
             return;
     }
 }

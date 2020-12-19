@@ -147,6 +147,9 @@
     <ClInclude Include="Regions.h" />
     <ClInclude Include="Static.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Regions.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
