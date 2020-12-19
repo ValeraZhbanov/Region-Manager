@@ -3,9 +3,10 @@
 #include <Commctrl.h>
 
 #include <fstream>
+#include <string>
+#include <regex>
 #include <locale>
 #include <codecvt>
-#include <string>
 
 #include "Regions.h"
 
@@ -79,15 +80,31 @@ void Cls_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags) {
 }
 
 BOOL WINAPI AboutProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
+    static std::vector<std::wstring> texts;
     switch(uMessage) {
         case WM_INITDIALOG:
             {
-                std::wifstream fin("about.txt", std::wifstream::binary);
+                std::wifstream fin(L"about.txt", std::wifstream::binary);
                 fin.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>()));
                 std::wstring text;
                 std::getline(fin, text, L'\0');
+                {
+                    std::wregex rx(L"\n");
+                    text = std::regex_replace(text, rx, L"\r\n");
+                }
+                {
+                    std::wregex rgx(L"<br>");
+                    std::wsregex_token_iterator iter(text.begin(), text.end(), rgx, -1);
+                    std::wsregex_token_iterator end;
+                    while(iter != end) {
+                        texts.push_back(*iter);
+                        ++iter;
+                    }
+                }
                 EnableWindow(Window.hWnd, 0);
-                SetWindowTextW(GetDlgItem(hWnd, IDC_TEXT), text.c_str());
+                for(auto it = 0; it < 3; ++it)
+                    CheckDlgButton(hWnd, IDC_CHECK + it, BM_SETCHECK);
+                SendMessage(hWnd, WM_COMMAND, IDC_CHECK, 0);
             }
             return 1;
         case WM_CLOSE:
@@ -95,8 +112,22 @@ BOOL WINAPI AboutProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
             DestroyWindow(hWnd);
             return 0;
         case WM_COMMAND:
-            if(wParam == IDCANCEL)
-                SendMessage(hWnd, WM_CLOSE, 0, 0);
+            switch(wParam) {
+                case IDCANCEL:
+                    SendMessage(hWnd, WM_CLOSE, 0, 0);
+                    return 0;
+                case IDC_CHECK:
+                case IDC_CHECK + 1:
+                case IDC_CHECK + 2:
+                    {
+                        std::wstring text;
+                        for(auto it = 0; it < 3; ++it)
+                            if(IsDlgButtonChecked(hWnd, IDC_CHECK + it))
+                                text += texts[it];
+                        SetWindowTextW(GetDlgItem(hWnd, IDC_TEXT), text.c_str());
+                    }
+                    return 0;
+            }
         default:
             return 0;
     }

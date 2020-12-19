@@ -26,6 +26,7 @@
 
 #define IDD_HELP                        101
 #define IDC_TEXT                        1001
+#define IDC_CHECK                       1101
 
 class Main {
 
@@ -44,7 +45,7 @@ public:
     HMENU ContextMenu = CreateContextMenu();
 
     Main() {}
-    Main(HWND hWnd) : hWnd(hWnd){
+    Main(HWND hWnd) : hWnd(hWnd) {
 
         Center(hWnd);
         HWND child = 0;
@@ -123,7 +124,7 @@ public:
         wc.cbClsExtra = 0;
         wc.cbWndExtra = 0;
         wc.hInstance = GetModuleHandle(0);
-        wc.hIcon = 0;
+        wc.hIcon = (HICON)LoadImage(0, "icon.ico", IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
         wc.hCursor = LoadCursor(0, IDC_ARROW);
         wc.hbrBackground = CreateSolidBrush(0xEEEEEE);
         wc.lpszMenuName = 0;
