@@ -24,6 +24,7 @@ std::vector<POINT> points;
 BOOL Cls_OnCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) {
     Window = Main(hWnd);
     Regions = MRegions(&Window);
+
     return 1;
 }
 
@@ -79,33 +80,26 @@ void Cls_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags) {
     }
 }
 
-BOOL WINAPI AboutProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
+BOOL WINAPI DlgAboutProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
     static std::vector<std::wstring> texts;
     switch(uMessage) {
         case WM_INITDIALOG:
-            {
+            if(!texts.size()) {
                 std::wifstream fin(L"about.txt", std::wifstream::binary);
                 fin.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>()));
                 std::wstring text;
                 std::getline(fin, text, L'\0');
-                {
-                    std::wregex rx(L"\n");
-                    text = std::regex_replace(text, rx, L"\r\n");
-                }
-                {
-                    std::wregex rgx(L"<br>");
-                    std::wsregex_token_iterator iter(text.begin(), text.end(), rgx, -1);
-                    std::wsregex_token_iterator end;
-                    while(iter != end) {
-                        texts.push_back(*iter);
-                        ++iter;
-                    }
-                }
-                EnableWindow(Window.hWnd, 0);
-                for(auto it = 0; it < 3; ++it)
-                    CheckDlgButton(hWnd, IDC_CHECK + it, BM_SETCHECK);
-                SendMessage(hWnd, WM_COMMAND, IDC_CHECK, 0);
+                std::wregex rx_replace(L"\n");
+                text = std::regex_replace(text, rx_replace, L"\r\n");
+                std::wregex rx_split(L"<br>");
+                std::wsregex_token_iterator iter(text.begin(), text.end(), rx_split, -1);
+                while(iter != std::wsregex_token_iterator())
+                    texts.push_back(*iter), ++iter;
             }
+            EnableWindow(Window.hWnd, 0);
+            for(auto it = 0; it < 3; ++it)
+                CheckDlgButton(hWnd, IDC_CHECK + it, BM_SETCHECK);
+            SendMessage(hWnd, WM_COMMAND, IDC_CHECK, 0);
             return 1;
         case WM_CLOSE:
             EnableWindow(Window.hWnd, 1);
@@ -131,7 +125,6 @@ BOOL WINAPI AboutProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
         default:
             return 0;
     }
-
 }
 
 void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
@@ -205,7 +198,7 @@ void Cls_OnCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify) {
                 Regions.Delete();
             return;
         case IDC_ABOUT:
-            CreateDialog(GetModuleHandle(0), MAKEINTRESOURCE(IDD_HELP), hWnd, AboutProc);
+            CreateDialog(GetModuleHandle(0), MAKEINTRESOURCE(IDD_HELP), hWnd, DlgAboutProc);
             return;
     }
 }
